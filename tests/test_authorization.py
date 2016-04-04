@@ -16,7 +16,6 @@ def fake_context(app):
 
 def test_bad_credentials():
     flask.g.resty_request_credentials = 'not a valid payload'
-    # flask.g = MagicMock(resty_request_credentials='not a valid payload')
     auth = TenantAuthorization()
     assert auth.get_tenant_credentials() == {}
 

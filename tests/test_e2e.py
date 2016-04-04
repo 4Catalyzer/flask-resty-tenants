@@ -5,7 +5,7 @@ from flask_resty import (
 from flask_resty_tenants import TenantAuthorization
 from marshmallow import fields, Schema
 import pytest
-from sqlalchemy import Column, Integer, String, Binary
+from sqlalchemy import Column, Integer, String
 
 from helpers import assert_response, request
 
@@ -29,7 +29,7 @@ def models(db):
         __tablename__ = 'widgets'
 
         id = Column(Integer, primary_key=True)
-        tenant_id = Column(Binary)
+        tenant_id = Column(String)
         name = Column(String)
 
     db.create_all()
