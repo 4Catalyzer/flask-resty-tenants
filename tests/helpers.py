@@ -1,6 +1,13 @@
 import inspect
-import itertools
 import json
+
+try:
+    # Python 2
+    from itertools import izip_longest
+    zip_longest = izip_longest
+except ImportError:
+    # Python 3
+    from itertools import zip_longest
 
 
 def request(client, method, path, data, **kwargs):
@@ -37,7 +44,7 @@ def assert_value(actual, expected):
         for k, v in expected.items():
             assert_value(actual.get(k, None), v)
     elif isinstance(expected, list):
-        for a, e in itertools.izip_longest(actual, expected):
+        for a, e in zip_longest(actual, expected):
             assert_value(a, e)
     else:
         assert actual == expected
