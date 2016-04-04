@@ -1,5 +1,5 @@
 [run]
-source = flask_resty
+source = flask_resty_tenants
 
 [report]
 exclude_lines =
