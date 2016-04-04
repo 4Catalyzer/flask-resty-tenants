@@ -7,6 +7,9 @@ python:
   - "3.5"
   - "pypy"
 
+env:
+  - TOXENV=py
+
 cache:
   directories:
     - $HOME/.cache/pip
