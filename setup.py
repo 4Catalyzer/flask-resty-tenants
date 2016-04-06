@@ -33,7 +33,6 @@ setup(
     classifiers=(
         'Development Status :: 3 - Alpha',
         'Framework :: Flask',
-        'Framework :: Flask-RESTy',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
