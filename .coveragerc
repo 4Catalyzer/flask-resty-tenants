@@ -1,0 +1,7 @@
+[run]
+source = flask_resty_tenants
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
