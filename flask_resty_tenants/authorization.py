@@ -59,8 +59,12 @@ class TenantAuthorization(HasAnyCredentialsAuthorization):
         credentials = self.get_tenant_credentials()
         if credentials.default_credentials >= self.read_role:
             return query
+        readable_tenants = {
+            tenant for tenant, role in credentials.items()
+            if role >= self.read_role
+        }
         return query.filter(
-            view.model.tenant_id.in_(credentials),
+            view.model.tenant_id.in_(readable_tenants),
         )
 
     def get_tenant_from_item(self, item):
