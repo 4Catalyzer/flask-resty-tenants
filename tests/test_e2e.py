@@ -2,7 +2,7 @@ import flask
 from flask_resty import (
     Api, AuthenticationBase, GenericModelView,
 )
-from flask_resty_tenants import TenantAuthorization
+from flask_resty_tenants import TenantAuthorization, ADMIN
 from marshmallow import fields, Schema
 import pytest
 from sqlalchemy import Column, Integer, String
@@ -16,8 +16,10 @@ TENANT2 = 'tenant_2'
 TENANT3 = 'tenant_3'
 USER_CREDENTIALS = {TENANT1: 0, TENANT2: 1}
 USER_READ_CREDENTIALS = {TENANT1: 0, TENANT2: 0}
+USER_ADMIN_CREDENTIALS = {TENANT1: 0, TENANT2: 2}
 DEFAULT_WRITE_CREDENTIALS = {'*': 1}
 DEFAULT_READ_CREDENTIALS = {'*': 0}
+DEFAULT_ADMIN_CREDENTIALS = {'*': 2}
 
 
 # -----------------------------------------------------------------------------
@@ -68,9 +70,17 @@ def auth():
     class Authorization(TenantAuthorization):
         id_type = str
 
+    class AdminAuthorization(TenantAuthorization):
+        id_type = str
+        read_role = ADMIN
+        delete_role = ADMIN
+        update_role = ADMIN
+        save_role = ADMIN
+
     return {
         'authentication': Authentication(),
-        'authorization': Authorization()
+        'authorization': Authorization(),
+        'adminAuthorization': AdminAuthorization(),
     }
 
 
@@ -101,9 +111,25 @@ def routes(app, models, schemas, auth):
         def delete(self, id):
             return self.destroy(id)
 
+    class AdminWidgetView(WidgetViewBase):
+        authorization = auth['adminAuthorization']
+
+        def get(self, id):
+            return self.retrieve(id)
+
+        def patch(self, id):
+            return self.update(id, partial=True)
+
+        def delete(self, id):
+            return self.destroy(id)
+
     api = Api(app)
     api.add_resource(
         '/widgets', WidgetListView, WidgetView, id_rule='<int:id>'
+    )
+
+    api.add_resource(
+        '/admin_widgets/<int:id>', AdminWidgetView,
     )
 
 
@@ -140,11 +166,25 @@ def test_retrieve(client, credentials, result):
 
 
 @pytest.mark.parametrize('credentials, result', (
+    (USER_READ_CREDENTIALS, 404),
+    (USER_CREDENTIALS, 404),
+    (DEFAULT_READ_CREDENTIALS, 404),
+    (DEFAULT_WRITE_CREDENTIALS, 404),
+    (None, 404),
+    (USER_ADMIN_CREDENTIALS, 200),
+    (DEFAULT_ADMIN_CREDENTIALS, 200),
+))
+def test_admin_retrieve(client, credentials, result):
+    response = client.get('/admin_widgets/2', query_string=credentials)
+    assert_response(response, result)
+
+
+@pytest.mark.parametrize('credentials, result', (
     (USER_READ_CREDENTIALS, 403),
     (USER_CREDENTIALS, 201),
     (DEFAULT_READ_CREDENTIALS, 403),
     (DEFAULT_WRITE_CREDENTIALS, 201),
-    (None, 403)
+    (None, 403),
 ))
 def test_create(client, credentials, result):
     response = request(
@@ -164,7 +204,7 @@ def test_create(client, credentials, result):
     (USER_CREDENTIALS, 204),
     (DEFAULT_READ_CREDENTIALS, 403),
     (DEFAULT_WRITE_CREDENTIALS, 204),
-    (None, 404)
+    (None, 404),
 ))
 def test_update(client, credentials, result):
     response = request(
@@ -180,12 +220,49 @@ def test_update(client, credentials, result):
 
 
 @pytest.mark.parametrize('credentials, result', (
+    (USER_READ_CREDENTIALS, 404),
+    (USER_CREDENTIALS, 404),
+    (DEFAULT_READ_CREDENTIALS, 404),
+    (DEFAULT_WRITE_CREDENTIALS, 404),
+    (None, 404),
+    (USER_ADMIN_CREDENTIALS, 204),
+    (DEFAULT_ADMIN_CREDENTIALS, 204),
+))
+def test_admin_update(client, credentials, result):
+    response = request(
+        client,
+        'PATCH', '/admin_widgets/2',
+        {
+            'id': '2',
+            'name': 'Updated',
+        },
+        query_string=credentials
+    )
+    assert_response(response, result)
+
+
+@pytest.mark.parametrize('credentials, result', (
     (USER_READ_CREDENTIALS, 403),
     (USER_CREDENTIALS, 204),
     (DEFAULT_READ_CREDENTIALS, 403),
     (DEFAULT_WRITE_CREDENTIALS, 204),
-    (None, 404)
+    (None, 404),
 ))
 def test_delete(client, credentials, result):
     response = client.delete('/widgets/2', query_string=credentials)
+    assert_response(response, result)
+
+
+@pytest.mark.parametrize('credentials, result', (
+    (USER_READ_CREDENTIALS, 404),
+    (USER_CREDENTIALS, 404),
+    (DEFAULT_READ_CREDENTIALS, 404),
+    (DEFAULT_WRITE_CREDENTIALS, 404),
+    (None, 404),
+    (USER_ADMIN_CREDENTIALS, 204),
+    (DEFAULT_ADMIN_CREDENTIALS, 204),
+))
+def test_admin_delete(client, credentials, result):
+    print credentials
+    response = client.delete('/admin_widgets/2', query_string=credentials)
     assert_response(response, result)
