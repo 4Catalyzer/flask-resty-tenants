@@ -263,6 +263,5 @@ def test_delete(client, credentials, result):
     (DEFAULT_ADMIN_CREDENTIALS, 204),
 ))
 def test_admin_delete(client, credentials, result):
-    print credentials
     response = client.delete('/admin_widgets/2', query_string=credentials)
     assert_response(response, result)
