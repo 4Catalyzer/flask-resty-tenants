@@ -1,4 +1,5 @@
 from flask_resty import ApiError, HasAnyCredentialsAuthorization
+from sqlalchemy import sql
 from uuid import UUID
 
 # -----------------------------------------------------------------------------
@@ -58,7 +59,7 @@ class TenantAuthorization(HasAnyCredentialsAuthorization):
     def get_filter(self, view):
         credentials = self.get_tenant_credentials()
         if credentials.default_credentials >= self.read_role:
-            return True
+            return sql.true()
         readable_tenants = {
             tenant for tenant, role in credentials.items()
             if role >= self.read_role
