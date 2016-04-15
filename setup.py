@@ -45,6 +45,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
     install_requires=(
         'Flask-RESTy >= 0.8.1',
+        'SQLAlchemy >= 1.0.0'
     ),
     cmdclass={
         'clean': system('rm -rf build dist *.egg-info'),
