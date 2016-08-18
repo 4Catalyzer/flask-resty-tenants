@@ -44,7 +44,7 @@ setup(
     keywords='rest flask multitenancy',
     packages=find_packages(exclude=('tests',)),
     install_requires=(
-        'Flask-RESTy >= 0.8.1',
+        'Flask-RESTy >= 0.10.0',
         'SQLAlchemy >= 1.0.0'
     ),
     cmdclass={

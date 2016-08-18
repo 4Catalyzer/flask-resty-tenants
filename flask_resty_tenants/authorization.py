@@ -1,4 +1,4 @@
-from flask_resty import ApiError, HasAnyCredentialsAuthorization
+from flask_resty import ApiError, HasCredentialsAuthorizationBase
 from sqlalchemy import sql
 from uuid import UUID
 
@@ -21,7 +21,7 @@ class TenantCredentials(dict):
         return self.get(tenant_id, self.default_credentials)
 
 
-class TenantAuthorization(HasAnyCredentialsAuthorization):
+class TenantAuthorization(HasCredentialsAuthorizationBase):
 
     read_role = READ_ONLY
     delete_role = MEMBER
