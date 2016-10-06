@@ -1,6 +1,7 @@
+from uuid import UUID
+
 from flask_resty import ApiError, HasCredentialsAuthorizationBase
 from sqlalchemy import sql
-from uuid import UUID
 
 # -----------------------------------------------------------------------------
 
@@ -12,65 +13,65 @@ ADMIN = 2
 # -----------------------------------------------------------------------------
 
 
-class TenantCredentials(dict):
-
-    def __init__(self, metadata_location='app_metadata'):
-        self.default_credentials = NO_ACCESS
-
-    def get_permissions_for(self, tenant_id):
-        return self.get(tenant_id, self.default_credentials)
-
-
 class TenantAuthorization(HasCredentialsAuthorizationBase):
-
     read_role = READ_ONLY
     delete_role = MEMBER
     update_role = MEMBER
     save_role = MEMBER
-    id_type = UUID
+
     default_tenant = '*'
+    tenant_id_type = UUID
 
-    def get_metadata(self):
-        return self.get_request_credentials()['app_metadata']
+    def get_model_tenant_id(self, model):
+        return self.get_tenant_id(model)
 
-    def get_tenant_credentials(self):
+    def get_item_tenant_id(self, item):
+        return self.get_tenant_id(item)
+
+    def get_tenant_id(self, model_or_item):
+        return model_or_item.tenant_id
+
+    def get_role_data(self):
         try:
-            app_metadata_items = self.get_metadata().items()
+            role_data = self.get_request_credentials()['app_metadata']
         except (TypeError, KeyError):
-            app_metadata_items = ()
+            role_data = None
+        return role_data if isinstance(role_data, dict) else {}
 
-        tenant_credentials = TenantCredentials()
+    def get_default_role(self):
+        return self.get_role_data().get(self.default_tenant, NO_ACCESS)
 
-        for tenant_id, role in app_metadata_items:
-            if type(role) is not int:
-                continue
-            if tenant_id == self.default_tenant:
-                tenant_credentials.default_credentials = role
-                continue
+    def get_tenant_role(self, tenant_id):
+        try:
+            role = self.get_role_data()[str(tenant_id)]
+        except KeyError:
+            role = self.get_default_role()
+        return role
+
+    def get_authorized_tenant_ids(self, role):
+        for tenant_id, tenant_role in self.get_role_data().items():
             try:
-                tenant_id = self.id_type(tenant_id)
+                tenant_id = self.tenant_id_type(tenant_id)
             except (AttributeError, ValueError):
                 continue
 
-            tenant_credentials[tenant_id] = role
+            if not isinstance(tenant_role, int):
+                continue
+            if tenant_role < role:
+                continue
 
-        return tenant_credentials
-
-    def get_filter(self, view):
-        credentials = self.get_tenant_credentials()
-        if credentials.default_credentials >= self.read_role:
-            return sql.true()
-        readable_tenants = {
-            tenant for tenant, role in credentials.items()
-            if role >= self.read_role
-        }
-        return view.model.tenant_id.in_(readable_tenants)
+            yield tenant_id
 
     def filter_query(self, query, view):
         return query.filter(self.get_filter(view))
 
-    def get_tenant_from_item(self, item):
-        return item.tenant_id
+    def get_filter(self, view):
+        if self.get_default_role() >= self.read_role:
+            return sql.true()  # Support SQLAlchemy operator overloads.
+
+        return self.get_model_tenant_id(view.model).in_(
+            self.get_authorized_tenant_ids(self.read_role),
+        )
 
     def authorize_save_item(self, item):
         self.authorize_modify_item(item, self.save_role)
@@ -82,7 +83,8 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         self.authorize_modify_item(item, self.delete_role)
 
     def authorize_modify_item(self, item, role):
-        credentials = self.get_tenant_credentials()
-        tenant_id = self.get_tenant_from_item(item)
-        if credentials.get_permissions_for(tenant_id) < role:
+        tenant_id = self.get_item_tenant_id(item)
+        tenant_role = self.get_tenant_role(tenant_id)
+
+        if tenant_role < role:
             raise ApiError(403, {'code': 'invalid_tenant.role'})

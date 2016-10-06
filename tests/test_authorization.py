@@ -1,51 +1,66 @@
+from uuid import uuid4
+
 import flask
 from flask_resty_tenants import TenantAuthorization
 import pytest
 from sqlalchemy import Column, Integer
-from uuid import uuid4
 
 # -----------------------------------------------------------------------------
 
 
 @pytest.yield_fixture(autouse=True)
 def fake_context(app):
-    ctx = app.test_request_context()
-    ctx.push()
-    yield
-    ctx.pop()
+    with app.test_request_context():
+        yield
 
 
-def test_bad_credentials():
+@pytest.fixture
+def auth():
+    return TenantAuthorization()
+
+
+@pytest.fixture
+def tenant_id():
+    return uuid4()
+
+
+# -----------------------------------------------------------------------------
+
+
+def test_bad_credentials(auth, tenant_id):
     flask.g.resty_request_credentials = 'not a valid payload'
-    auth = TenantAuthorization()
-    assert auth.get_tenant_credentials() == {}
+
+    assert not tuple(auth.get_authorized_tenant_ids(0))
+    assert auth.get_tenant_role(tenant_id) < 0
 
 
-def test_bad_role():
-    tenant = uuid4()
+def test_bad_role(auth, tenant_id):
     flask.g.resty_request_credentials = {
         'app_metadata': {
             uuid4(): 'not a valid role',
-            str(tenant): 2,
+            str(tenant_id): 2,
         }
     }
-    auth = TenantAuthorization()
-    assert auth.get_tenant_credentials() == {tenant: 2}
+
+    assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
+    assert tuple(auth.get_authorized_tenant_ids(2)) == (tenant_id,)
+    assert auth.get_tenant_role(tenant_id) == 2
 
 
-def test_bad_tenant():
-    tenant = uuid4()
+def test_bad_tenant(auth, tenant_id):
     flask.g.resty_request_credentials = {
         'app_metadata': {
             'not a valid tenant': 2,
-            str(tenant): 2,
+            str(tenant_id): 2,
         }
     }
-    auth = TenantAuthorization()
-    assert auth.get_tenant_credentials() == {tenant: 2}
+
+    assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
+    assert tuple(auth.get_authorized_tenant_ids(2)) == (tenant_id,)
+    assert auth.get_tenant_role(tenant_id) == 2
 
 
-def test_filtering(db):
+def test_filtering(db, auth, tenant_id):
     flask.g.resty_request_credentials = {
         'app_metadata': {
             '*': 0,
@@ -57,5 +72,10 @@ def test_filtering(db):
 
         id = Column(Integer, primary_key=True)
 
-    auth = TenantAuthorization()
-    assert (auth.get_filter(None) | (Widget.id == 0)) is not None
+    db.create_all()
+    db.session.add(Widget())
+
+    assert Widget.query.filter(auth.get_filter(Widget)).first()
+    assert auth.get_tenant_role(tenant_id) == 0
+
+    db.drop_all()
