@@ -1,8 +1,6 @@
 import flask
-from flask_resty import (
-    Api, AuthenticationBase, GenericModelView,
-)
-from flask_resty_tenants import TenantAuthorization, ADMIN
+from flask_resty import Api, AuthenticationBase, GenericModelView
+from flask_resty_tenants import ADMIN, TenantAuthorization
 from marshmallow import fields, Schema
 import pytest
 from sqlalchemy import Column, Integer, String
@@ -11,16 +9,17 @@ from helpers import assert_response, request
 
 # -----------------------------------------------------------------------------
 
-TENANT1 = 'tenant_1'
-TENANT2 = 'tenant_2'
-TENANT3 = 'tenant_3'
-USER_CREDENTIALS = {TENANT1: 0, TENANT2: 1}
-USER_READ_CREDENTIALS = {TENANT1: 0, TENANT2: 0}
-USER_ADMIN_CREDENTIALS = {TENANT1: 0, TENANT2: 2}
+TENANT_ID_1 = 'tenant_1'
+TENANT_ID_2 = 'tenant_2'
+TENANT_ID_3 = 'tenant_3'
+
+USER_CREDENTIALS = {TENANT_ID_1: 0, TENANT_ID_2: 1}
+USER_READ_CREDENTIALS = {TENANT_ID_1: 0, TENANT_ID_2: 0}
+USER_ADMIN_CREDENTIALS = {TENANT_ID_1: 0, TENANT_ID_2: 2}
+
 DEFAULT_WRITE_CREDENTIALS = {'*': 1}
 DEFAULT_READ_CREDENTIALS = {'*': 0}
 DEFAULT_ADMIN_CREDENTIALS = {'*': 2}
-
 
 # -----------------------------------------------------------------------------
 
@@ -68,10 +67,10 @@ def auth():
             }
 
     class Authorization(TenantAuthorization):
-        id_type = str
+        tenant_id_type = str
 
     class AdminAuthorization(TenantAuthorization):
-        id_type = str
+        tenant_id_type = str
         read_role = ADMIN
         delete_role = ADMIN
         update_role = ADMIN
@@ -86,7 +85,6 @@ def auth():
 
 @pytest.fixture(autouse=True)
 def routes(app, models, schemas, auth):
-
     class WidgetViewBase(GenericModelView):
         model = models['widget']
         schema = schemas['widget']
@@ -136,11 +134,12 @@ def routes(app, models, schemas, auth):
 @pytest.fixture(autouse=True)
 def data(db, models):
     db.session.add_all((
-        models['widget'](tenant_id=TENANT1, name='Foo'),
-        models['widget'](tenant_id=TENANT2, name='Bar'),
-        models['widget'](tenant_id=TENANT3, name='Baz'),
+        models['widget'](tenant_id=TENANT_ID_1, name='Foo'),
+        models['widget'](tenant_id=TENANT_ID_2, name='Bar'),
+        models['widget'](tenant_id=TENANT_ID_3, name='Baz'),
     ))
     db.session.commit()
+
 
 # -----------------------------------------------------------------------------
 
@@ -192,9 +191,9 @@ def test_create(client, credentials, result):
         'POST', '/widgets',
         {
             'name': 'Created',
-            'tenant_id': TENANT2,
+            'tenant_id': TENANT_ID_2,
         },
-        query_string=credentials
+        query_string=credentials,
     )
     assert_response(response, result)
 
@@ -214,7 +213,7 @@ def test_update(client, credentials, result):
             'id': '2',
             'name': 'Updated',
         },
-        query_string=credentials
+        query_string=credentials,
     )
     assert_response(response, result)
 
@@ -236,7 +235,7 @@ def test_admin_update(client, credentials, result):
             'id': '2',
             'name': 'Updated',
         },
-        query_string=credentials
+        query_string=credentials,
     )
     assert_response(response, result)
 
