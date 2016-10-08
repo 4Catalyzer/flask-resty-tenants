@@ -15,12 +15,22 @@ ADMIN = 2
 
 class TenantAuthorization(HasCredentialsAuthorizationBase):
     read_role = READ_ONLY
-    delete_role = MEMBER
-    update_role = MEMBER
-    save_role = MEMBER
+    modify_role = MEMBER
 
     default_tenant = '*'
     tenant_id_type = UUID
+
+    @property
+    def save_role(self):
+        return self.modify_role
+
+    @property
+    def update_role(self):
+        return self.modify_role
+
+    @property
+    def delete_role(self):
+        return self.modify_role
 
     def get_model_tenant_id(self, model):
         return self.get_tenant_id(model)
