@@ -37,6 +37,30 @@ def test_bad_credentials(auth, tenant_id):
 def test_bad_role(auth, tenant_id):
     flask.g.resty_request_credentials = {
         'app_metadata': {
+            str(tenant_id): None,
+        }
+    }
+
+    assert not tuple(auth.get_authorized_tenant_ids(0))
+    assert auth.get_tenant_role(tenant_id) < 0
+
+
+def test_bad_default_role(auth, tenant_id):
+    flask.g.resty_request_credentials = {
+        'app_metadata': {
+            str(tenant_id): None,
+            '*': None,
+        }
+    }
+
+    assert not tuple(auth.get_authorized_tenant_ids(0))
+    assert auth.get_tenant_role(tenant_id) < 0
+    assert auth.get_default_role() < 0
+
+
+def test_bad_role_other_tenant(auth, tenant_id):
+    flask.g.resty_request_credentials = {
+        'app_metadata': {
             uuid4(): 'not a valid role',
             str(tenant_id): 2,
         }
