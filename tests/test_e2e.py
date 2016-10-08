@@ -70,11 +70,10 @@ def auth():
         tenant_id_type = str
 
     class AdminAuthorization(TenantAuthorization):
-        tenant_id_type = str
         read_role = ADMIN
-        delete_role = ADMIN
-        update_role = ADMIN
-        save_role = ADMIN
+        modify_role = ADMIN
+
+        tenant_id_type = str
 
     return {
         'authentication': Authentication(),
