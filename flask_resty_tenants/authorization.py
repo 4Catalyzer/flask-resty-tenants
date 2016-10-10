@@ -1,5 +1,7 @@
 from uuid import UUID
 
+import flask
+
 from flask_resty import ApiError, HasCredentialsAuthorizationBase
 from sqlalchemy import sql
 
@@ -31,6 +33,9 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     @property
     def delete_role(self):
         return self.modify_role
+
+    def get_request_tenant_id(self):
+        return flask.request.view_args['tenant_id']
 
     def get_model_tenant_id(self, model):
         return self.get_tenant_id(model)
@@ -75,6 +80,19 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
                 continue
 
             yield tenant_id
+
+    def check_request_tenant_id(self):
+        try:
+            tenant_id = self.get_request_tenant_id()
+        except KeyError:
+            return
+
+        if self.get_tenant_role(tenant_id) < self.read_role:
+            flask.abort(404)
+
+    def authorize_request(self):
+        super(TenantAuthorization, self).authorize_request()
+        self.check_request_tenant_id()
 
     def filter_query(self, query, view):
         return query.filter(self.get_filter(view))
