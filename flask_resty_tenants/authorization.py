@@ -53,6 +53,9 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
             role_data = None
         return role_data if isinstance(role_data, dict) else {}
 
+    def ensure_role(self, role):
+        return role if isinstance(role, int) else NO_ACCESS
+
     def get_default_role(self):
         role = self.get_role_data().get(self.default_tenant, NO_ACCESS)
         return self.ensure_role(role)
@@ -63,9 +66,6 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         except KeyError:
             role = self.get_default_role()
         return role
-
-    def ensure_role(self, role):
-        return role if isinstance(role, int) else NO_ACCESS
 
     def get_authorized_tenant_ids(self, role):
         for tenant_id, tenant_role in self.get_role_data().items():
@@ -81,6 +81,13 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
             yield tenant_id
 
+    def is_authorized(self, tenant_id, role):
+        return self.get_tenant_role(tenant_id) >= role
+
+    def authorize_request(self):
+        super(TenantAuthorization, self).authorize_request()
+        self.check_request_tenant_id()
+
     def check_request_tenant_id(self):
         try:
             tenant_id = self.get_request_tenant_id()
@@ -89,10 +96,6 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
         if self.get_tenant_role(tenant_id) < self.read_role:
             flask.abort(404)
-
-    def authorize_request(self):
-        super(TenantAuthorization, self).authorize_request()
-        self.check_request_tenant_id()
 
     def filter_query(self, query, view):
         return query.filter(self.get_filter(view))
@@ -116,7 +119,5 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
     def authorize_modify_item(self, item, role):
         tenant_id = self.get_item_tenant_id(item)
-        tenant_role = self.get_tenant_role(tenant_id)
-
-        if tenant_role < role:
+        if not self.is_authorized(tenant_id, role):
             raise ApiError(403, {'code': 'invalid_tenant.role'})
