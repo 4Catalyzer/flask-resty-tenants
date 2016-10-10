@@ -85,10 +85,10 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         try:
             tenant_id = self.get_request_tenant_id()
         except KeyError:
-            pass
-        else:
-            if self.get_tenant_role(tenant_id) < self.read_role:
-                flask.abort(404)
+            return
+
+        if self.get_tenant_role(tenant_id) < self.read_role:
+            flask.abort(404)
 
     def authorize_request(self):
         super(TenantAuthorization, self).authorize_request()
