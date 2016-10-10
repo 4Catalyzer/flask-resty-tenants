@@ -98,6 +98,10 @@ def routes(app, models, schemas, auth):
         def post(self):
             return self.create()
 
+    class TenantWidgetListView(WidgetViewBase):
+        def get(self, tenant_id):
+            return self.list()
+
     class WidgetView(WidgetViewBase):
         def get(self, id):
             return self.retrieve(id)
@@ -124,7 +128,9 @@ def routes(app, models, schemas, auth):
     api.add_resource(
         '/widgets', WidgetListView, WidgetView, id_rule='<int:id>'
     )
-
+    api.add_resource(
+        '/tenants/<tenant_id>/widgets', TenantWidgetListView,
+    )
     api.add_resource(
         '/admin_widgets/<int:id>', AdminWidgetView,
     )
@@ -149,6 +155,19 @@ def test_list(client):
         {'name': 'Foo'},
         {'name': 'Bar'},
     ])
+
+
+@pytest.mark.parametrize('tenant_id, result', (
+    (TENANT_ID_1, 200),
+    (TENANT_ID_2, 200),
+    (TENANT_ID_3, 404),
+))
+def test_list(client, tenant_id, result):
+    response = client.get(
+        '/tenants/{}/widgets'.format(tenant_id),
+        query_string=USER_CREDENTIALS,
+    )
+    assert_response(response, result)
 
 
 @pytest.mark.parametrize('credentials, result', (
