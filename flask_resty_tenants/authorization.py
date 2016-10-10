@@ -81,6 +81,10 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
             yield tenant_id
 
+    def authorize_request(self):
+        super(TenantAuthorization, self).authorize_request()
+        self.check_request_tenant_id()
+
     def check_request_tenant_id(self):
         try:
             tenant_id = self.get_request_tenant_id()
@@ -89,10 +93,6 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
         if self.get_tenant_role(tenant_id) < self.read_role:
             flask.abort(404)
-
-    def authorize_request(self):
-        super(TenantAuthorization, self).authorize_request()
-        self.check_request_tenant_id()
 
     def filter_query(self, query, view):
         return query.filter(self.get_filter(view))
