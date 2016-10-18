@@ -42,7 +42,7 @@ def test_credentials(auth, tenant_id):
     assert not auth.is_authorized(tenant_id, 2)
 
 
-def test_default_credentials(auth, tenant_id):
+def test_global_credentials(auth, tenant_id):
     tenant_id_2 = uuid4()
     tenant_id_3 = uuid4()
 
@@ -57,8 +57,9 @@ def test_default_credentials(auth, tenant_id):
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert auth.is_authorized(tenant_id, 1)
     assert auth.is_authorized(tenant_id_2, 0)
+    assert auth.is_authorized(tenant_id_3, 0)
     assert not auth.is_authorized(tenant_id_2, 1)
-    assert not auth.is_authorized(tenant_id_3, 0)
+    assert not auth.is_authorized(tenant_id_3, 1)
 
 
 def test_bad_credentials(auth, tenant_id):
@@ -79,7 +80,7 @@ def test_bad_role(auth, tenant_id):
     assert not auth.is_authorized(tenant_id, 0)
 
 
-def test_bad_default_role(auth, tenant_id):
+def test_bad_global_role(auth, tenant_id):
     flask.g.resty_request_credentials = {
         'app_metadata': {
             str(tenant_id): None,
@@ -89,7 +90,7 @@ def test_bad_default_role(auth, tenant_id):
 
     assert not tuple(auth.get_authorized_tenant_ids(0))
     assert not auth.is_authorized(tenant_id, 0)
-    assert auth.get_default_role() < 0
+    assert auth.get_global_role() < 0
 
 
 def test_bad_role_other_tenant(auth, tenant_id):

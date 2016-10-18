@@ -19,7 +19,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     read_role = READ_ONLY
     modify_role = MEMBER
 
-    default_tenant = '*'
+    global_tenant = '*'
     tenant_id_type = UUID
 
     @property
@@ -56,16 +56,17 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     def ensure_role(self, role):
         return role if isinstance(role, int) else NO_ACCESS
 
-    def get_default_role(self):
-        role = self.get_role_data().get(self.default_tenant, NO_ACCESS)
+    def get_global_role(self):
+        role = self.get_role_data().get(self.global_tenant, NO_ACCESS)
         return self.ensure_role(role)
 
     def get_tenant_role(self, tenant_id):
+        global_role = self.get_global_role()
         try:
             role = self.ensure_role(self.get_role_data()[str(tenant_id)])
         except KeyError:
-            role = self.get_default_role()
-        return role
+            return global_role
+        return max(role, global_role)
 
     def get_authorized_tenant_ids(self, role):
         for tenant_id, tenant_role in self.get_role_data().items():
@@ -101,7 +102,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         return query.filter(self.get_filter(view))
 
     def get_filter(self, view):
-        if self.get_default_role() >= self.read_role:
+        if self.get_global_role() >= self.read_role:
             return sql.true()  # Support SQLAlchemy operator overloads.
 
         return self.get_model_tenant_id(view.model).in_(
