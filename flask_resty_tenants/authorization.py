@@ -72,7 +72,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         for tenant_id, tenant_role in self.get_role_data().items():
             try:
                 tenant_id = self.tenant_id_type(tenant_id)
-            except (AttributeError, ValueError):
+            except (TypeError, AttributeError, ValueError):
                 continue
 
             if not isinstance(tenant_role, int):
