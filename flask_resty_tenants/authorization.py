@@ -99,12 +99,11 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
             flask.abort(404)
 
     def filter_query(self, query, view):
+        if self.get_global_role() >= self.read_role:
+            return query
         return query.filter(self.get_filter(view))
 
     def get_filter(self, view):
-        if self.get_global_role() >= self.read_role:
-            return sql.true()  # Support SQLAlchemy operator overloads.
-
         return self.get_model_tenant_id(view.model).in_(
             self.get_authorized_tenant_ids(self.read_role),
         )
