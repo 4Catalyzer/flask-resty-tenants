@@ -134,7 +134,7 @@ def test_filtering(db, auth, tenant_id):
     db.create_all()
     db.session.add(Widget())
 
-    assert Widget.query.filter(auth.get_filter(Widget)).first()
+    assert auth.filter_query(Widget.query, None).first()
     assert auth.is_authorized(tenant_id, 0)
     assert not auth.is_authorized(tenant_id, 1)
 
