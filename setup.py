@@ -24,7 +24,7 @@ def system(command):
 
 setup(
     name="Flask-RESTy-Tenants",
-    version='0.5.1',
+    version='0.5.2',
     description='Flask Resty Authorization module for multitenancy',
     url='https://github.com/4Catalyzer/flask-resty-tenants',
     author='Giacomo Tagliabue',
@@ -46,7 +46,7 @@ setup(
     install_requires=(
         'Flask >= 0.10',
         'Flask-RESTy >= 0.10.0',
-        'SQLAlchemy >= 1.0.0'
+        'SQLAlchemy >= 1.0.0',
     ),
     cmdclass={
         'clean': system('rm -rf build dist *.egg-info'),
