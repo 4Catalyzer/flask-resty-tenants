@@ -162,7 +162,7 @@ def test_list(client):
     (TENANT_ID_2, 200),
     (TENANT_ID_3, 404),
 ))
-def test_list(client, tenant_id, result):
+def test_tenant_list(client, tenant_id, result):
     response = client.get(
         '/tenants/{}/widgets'.format(tenant_id),
         query_string=USER_CREDENTIALS,
