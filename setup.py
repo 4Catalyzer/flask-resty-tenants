@@ -24,7 +24,7 @@ def system(command):
 
 setup(
     name="Flask-RESTy-Tenants",
-    version='0.5.2',
+    version='0.5.3',
     description='Flask Resty Authorization module for multitenancy',
     url='https://github.com/4Catalyzer/flask-resty-tenants',
     author='Giacomo Tagliabue',
@@ -50,8 +50,7 @@ setup(
     ),
     cmdclass={
         'clean': system('rm -rf build dist *.egg-info'),
-        'package': system('python setup.py pandoc sdist bdist_wheel'),
-        'pandoc': system('pandoc README.md -o README.rst'),
+        'package': system('python setup.py sdist bdist_wheel'),
         'publish': system('twine upload dist/*'),
         'release': system('python setup.py clean package publish'),
         'test': system('tox'),
