@@ -3,7 +3,6 @@ from uuid import UUID
 import flask
 
 from flask_resty import ApiError, HasCredentialsAuthorizationBase
-from sqlalchemy import sql
 
 # -----------------------------------------------------------------------------
 
@@ -21,6 +20,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
     global_tenant = '*'
     tenant_id_type = UUID
+    tenant_id_field = 'tenant_id'
 
     @property
     def save_role(self):
@@ -35,7 +35,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         return self.modify_role
 
     def get_request_tenant_id(self):
-        return flask.request.view_args['tenant_id']
+        return flask.request.view_args[self.tenant_id_field]
 
     def get_model_tenant_id(self, model):
         return self.get_tenant_id(model)
@@ -44,7 +44,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         return self.get_tenant_id(item)
 
     def get_tenant_id(self, model_or_item):
-        return model_or_item.tenant_id
+        return getattr(model_or_item, self.tenant_id_field)
 
     def get_role_data(self):
         try:
