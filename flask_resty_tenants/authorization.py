@@ -21,6 +21,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     global_tenant = '*'
     tenant_id_type = UUID
     tenant_id_field = 'tenant_id'
+
     role_field = 'app_metadata'
 
     @property
