@@ -57,14 +57,14 @@ def test_credentials_custom_field(auth, tenant_id):
     assert not auth.is_authorized(tenant_id, 2)
 
 
-def test_credentials_custom_role_fields(auth, tenant_id):
+def test_credentials_custom_role_field(auth, tenant_id):
     context.set_context_value('request_credentials', {
         'https://foo.com/app_metadata': {
             str(tenant_id): 1,
         }
     })
 
-    auth.role_fields = ('https://foo.com/app_metadata',)
+    auth.role_field = 'https://foo.com/app_metadata'
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert tuple(auth.get_authorized_tenant_ids(1)) == (tenant_id,)
