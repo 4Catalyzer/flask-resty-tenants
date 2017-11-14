@@ -22,6 +22,8 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     tenant_id_type = UUID
     tenant_id_field = 'tenant_id'
 
+    role_field = 'app_metadata'
+
     @property
     def save_role(self):
         return self.modify_role
@@ -48,7 +50,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
     def get_role_data(self):
         try:
-            role_data = self.get_request_credentials()['app_metadata']
+            role_data = self.get_request_credentials()[self.role_field]
         except (TypeError, KeyError):
             role_data = None
         return role_data if isinstance(role_data, dict) else {}

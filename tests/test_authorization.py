@@ -57,6 +57,23 @@ def test_credentials_custom_field(auth, tenant_id):
     assert not auth.is_authorized(tenant_id, 2)
 
 
+def test_credentials_custom_role_field(auth, tenant_id):
+    context.set_context_value('request_credentials', {
+        'https://foo.com/app_metadata': {
+            str(tenant_id): 1,
+        }
+    })
+
+    auth.role_field = 'https://foo.com/app_metadata'
+
+    assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
+    assert tuple(auth.get_authorized_tenant_ids(1)) == (tenant_id,)
+    assert tuple(auth.get_authorized_tenant_ids(2)) == ()
+    assert auth.is_authorized(tenant_id, 0)
+    assert auth.is_authorized(tenant_id, 1)
+    assert not auth.is_authorized(tenant_id, 2)
+
+
 def test_global_credentials(auth, tenant_id):
     tenant_id_2 = uuid4()
     tenant_id_3 = uuid4()
