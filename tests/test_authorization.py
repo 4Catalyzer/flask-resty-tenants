@@ -1,6 +1,6 @@
-from uuid import uuid4
+import uuid
 
-from flask_resty import context
+from flask_resty.authentication import set_request_credentials
 from flask_resty_tenants import TenantAuthorization
 import pytest
 from sqlalchemy import Column, Integer
@@ -21,14 +21,14 @@ def auth():
 
 @pytest.fixture
 def tenant_id():
-    return uuid4()
+    return uuid.uuid4()
 
 
 # -----------------------------------------------------------------------------
 
 
 def test_credentials(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             str(tenant_id): 1,
         }
@@ -43,7 +43,7 @@ def test_credentials(auth, tenant_id):
 
 
 def test_credentials_custom_field(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             str(tenant_id): 1,
         }
@@ -58,7 +58,7 @@ def test_credentials_custom_field(auth, tenant_id):
 
 
 def test_credentials_custom_role_field(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'https://foo.com/app_metadata': {
             str(tenant_id): 1,
         }
@@ -75,10 +75,10 @@ def test_credentials_custom_role_field(auth, tenant_id):
 
 
 def test_global_credentials(auth, tenant_id):
-    tenant_id_2 = uuid4()
-    tenant_id_3 = uuid4()
+    tenant_id_2 = uuid.uuid4()
+    tenant_id_3 = uuid.uuid4()
 
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             str(tenant_id): 1,
             str(tenant_id_3): -1,
@@ -95,14 +95,14 @@ def test_global_credentials(auth, tenant_id):
 
 
 def test_bad_credentials(auth, tenant_id):
-    context.set_context_value('request_credentials', 'not a valid payload')
+    set_request_credentials('not a valid payload')
 
     assert not tuple(auth.get_authorized_tenant_ids(0))
     assert not auth.is_authorized(tenant_id, 0)
 
 
 def test_bad_role(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             str(tenant_id): None,
         }
@@ -113,7 +113,7 @@ def test_bad_role(auth, tenant_id):
 
 
 def test_bad_global_role(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             str(tenant_id): None,
             '*': None,
@@ -126,9 +126,9 @@ def test_bad_global_role(auth, tenant_id):
 
 
 def test_bad_role_other_tenant(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
-            uuid4(): 'not a valid role',
+            uuid.uuid4(): 'not a valid role',
             str(tenant_id): 2,
         }
     })
@@ -139,7 +139,7 @@ def test_bad_role_other_tenant(auth, tenant_id):
 
 
 def test_bad_tenant(auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             'not a valid tenant': 2,
             str(tenant_id): 2,
@@ -152,7 +152,7 @@ def test_bad_tenant(auth, tenant_id):
 
 
 def test_filtering(db, auth, tenant_id):
-    context.set_context_value('request_credentials', {
+    set_request_credentials({
         'app_metadata': {
             '*': 0,
         }
