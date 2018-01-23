@@ -3,6 +3,7 @@ from uuid import UUID
 import flask
 
 from flask_resty import ApiError, HasCredentialsAuthorizationBase
+from flask_resty.utils import settable_property
 
 # -----------------------------------------------------------------------------
 
@@ -24,15 +25,19 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     tenant_id_type = UUID
     tenant_id_field = 'tenant_id'
 
-    @property
+    @settable_property
     def save_role(self):
         return self.modify_role
 
-    @property
+    @settable_property
+    def create_role(self):
+        return self.modify_role
+
+    @settable_property
     def update_role(self):
         return self.modify_role
 
-    @property
+    @settable_property
     def delete_role(self):
         return self.modify_role
 
@@ -109,6 +114,9 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
         return self.get_model_tenant_id(view.model).in_(
             self.get_authorized_tenant_ids(self.read_role),
         )
+
+    def authorize_create_item(self, item):
+        self.authorize_modify_item(item, self.create_role)
 
     def authorize_save_item(self, item):
         self.authorize_modify_item(item, self.save_role)

@@ -45,7 +45,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
     install_requires=(
         'Flask >= 0.10',
-        'Flask-RESTy >= 0.10.0',
+        'Flask-RESTy >= 0.11.2',
         'SQLAlchemy >= 1.0.0',
     ),
     cmdclass={
