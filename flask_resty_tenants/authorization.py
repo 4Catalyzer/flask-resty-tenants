@@ -2,7 +2,11 @@ from uuid import UUID
 
 import flask
 
-from flask_resty import ApiError, HasCredentialsAuthorizationBase
+from flask_resty import (
+    ApiError,
+    AuthorizeModifyMixin,
+    HasCredentialsAuthorizationBase,
+)
 from flask_resty.utils import settable_property
 
 # -----------------------------------------------------------------------------
@@ -15,7 +19,10 @@ ADMIN = 2
 # -----------------------------------------------------------------------------
 
 
-class TenantAuthorization(HasCredentialsAuthorizationBase):
+class TenantAuthorization(
+    AuthorizeModifyMixin,
+    HasCredentialsAuthorizationBase,
+):
     read_role = READ_ONLY
     modify_role = MEMBER
 
@@ -75,7 +82,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
             return global_role
         return max(role, global_role)
 
-    def get_authorized_tenant_ids(self, role):
+    def get_authorized_tenant_ids(self, required_role):
         for tenant_id, tenant_role in self.get_role_data().items():
             try:
                 tenant_id = self.tenant_id_type(tenant_id)
@@ -84,13 +91,13 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
 
             if not isinstance(tenant_role, int):
                 continue
-            if tenant_role < role:
+            if tenant_role < required_role:
                 continue
 
             yield tenant_id
 
-    def is_authorized(self, tenant_id, role):
-        return self.get_tenant_role(tenant_id) >= role
+    def is_authorized(self, tenant_id, required_role):
+        return self.get_tenant_role(tenant_id) >= required_role
 
     def authorize_request(self):
         super(TenantAuthorization, self).authorize_request()
@@ -108,6 +115,7 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
     def filter_query(self, query, view):
         if self.get_global_role() >= self.read_role:
             return query
+
         return query.filter(self.get_filter(view))
 
     def get_filter(self, view):
@@ -115,19 +123,12 @@ class TenantAuthorization(HasCredentialsAuthorizationBase):
             self.get_authorized_tenant_ids(self.read_role),
         )
 
-    def authorize_create_item(self, item):
-        self.authorize_modify_item(item, self.create_role)
-
-    def authorize_save_item(self, item):
-        self.authorize_modify_item(item, self.save_role)
-
-    def authorize_update_item(self, item, data):
-        self.authorize_modify_item(item, self.update_role)
-
-    def authorize_delete_item(self, item):
-        self.authorize_modify_item(item, self.delete_role)
-
-    def authorize_modify_item(self, item, role):
+    def authorize_modify_item(self, item, action):
         tenant_id = self.get_item_tenant_id(item)
-        if not self.is_authorized(tenant_id, role):
+        required_role = self.get_required_role(action)
+
+        if not self.is_authorized(tenant_id, required_role):
             raise ApiError(403, {'code': 'invalid_tenant.role'})
+
+    def get_required_role(self, action):
+        return getattr(self, '{}_role'.format(action))
