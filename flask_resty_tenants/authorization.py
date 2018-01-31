@@ -15,6 +15,7 @@ NO_ACCESS = float('-inf')
 READ_ONLY = 0
 MEMBER = 1
 ADMIN = 2
+CEIL_ROLE = float('inf')
 
 # -----------------------------------------------------------------------------
 
