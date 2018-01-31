@@ -11,10 +11,11 @@ from flask_resty.utils import settable_property
 
 # -----------------------------------------------------------------------------
 
-NO_ACCESS = float('-inf')
+PUBLIC = float('-inf')
 READ_ONLY = 0
 MEMBER = 1
 ADMIN = 2
+NOT_ALLOWED = float('inf')
 
 # -----------------------------------------------------------------------------
 
@@ -68,10 +69,10 @@ class TenantAuthorization(
         return role_data if isinstance(role_data, dict) else {}
 
     def ensure_role(self, role):
-        return role if isinstance(role, int) else NO_ACCESS
+        return role if isinstance(role, int) else PUBLIC
 
     def get_global_role(self):
-        role = self.get_role_data().get(self.global_tenant, NO_ACCESS)
+        role = self.get_role_data().get(self.global_tenant, PUBLIC)
         return self.ensure_role(role)
 
     def get_tenant_role(self, tenant_id):
