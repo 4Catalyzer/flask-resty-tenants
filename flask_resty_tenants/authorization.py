@@ -84,6 +84,8 @@ class TenantAuthorization(
         return max(role, global_role)
 
     def get_authorized_tenant_ids(self, required_role):
+        tenant_ids = []
+
         for tenant_id, tenant_role in self.get_role_data().items():
             try:
                 tenant_id = self.tenant_id_type(tenant_id)
@@ -95,7 +97,9 @@ class TenantAuthorization(
             if tenant_role < required_role:
                 continue
 
-            yield tenant_id
+            tenant_ids.append(tenant_id)
+
+        return frozenset(tenant_ids)
 
     def is_authorized(self, tenant_id, required_role):
         return self.get_tenant_role(tenant_id) >= required_role
