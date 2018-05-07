@@ -78,7 +78,7 @@ def auth():
     return {
         'authentication': Authentication(),
         'authorization': Authorization(),
-        'adminAuthorization': AdminAuthorization(),
+        'admin_authorization': AdminAuthorization(),
     }
 
 
@@ -113,7 +113,7 @@ def routes(app, models, schemas, auth):
             return self.destroy(id)
 
     class AdminWidgetView(WidgetViewBase):
-        authorization = auth['adminAuthorization']
+        authorization = auth['admin_authorization']
 
         def get(self, id):
             return self.retrieve(id)
@@ -252,6 +252,26 @@ def test_admin_update(client, credentials, result):
         {
             'id': '2',
             'name': 'Updated',
+        },
+        query_string=credentials,
+    )
+    assert_response(response, result)
+
+
+@pytest.mark.parametrize('credentials, result', (
+    (USER_READ_CREDENTIALS, 403),
+    (USER_CREDENTIALS, 403),
+    (DEFAULT_READ_CREDENTIALS, 403),
+    (DEFAULT_WRITE_CREDENTIALS, 403),
+    (None, 404),
+))
+def test_update_tenant_id(client, credentials, result):
+    response = request(
+        client,
+        'PATCH', '/widgets/2',
+        {
+            'id': '2',
+            'tenant_id': TENANT_ID_1,
         },
         query_string=credentials,
     )
