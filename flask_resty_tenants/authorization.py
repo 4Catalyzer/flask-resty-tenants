@@ -61,6 +61,9 @@ class TenantAuthorization(
     def get_tenant_id(self, model_or_item):
         return getattr(model_or_item, self.tenant_id_field)
 
+    def get_data_tenant_id(self, data):
+        return data[self.tenant_id_field]
+
     def get_role_data(self):
         try:
             role_data = self.get_request_credentials()[self.role_field]
@@ -127,6 +130,19 @@ class TenantAuthorization(
         return self.get_model_tenant_id(view.model).in_(
             self.get_authorized_tenant_ids(self.read_role),
         )
+
+    def authorize_update_item(self, item, data):
+        self.authorize_update_item_tenant_id(item, data)
+        super(TenantAuthorization, self).authorize_update_item(item, data)
+
+    def authorize_update_item_tenant_id(self, item, data):
+        try:
+            data_tenant_id = self.get_data_tenant_id(data)
+        except KeyError:
+            pass
+        else:
+            if data_tenant_id != self.get_item_tenant_id(item):
+                raise ApiError(403, {'code': 'invalid_data.tenant'})
 
     def authorize_modify_item(self, item, action):
         tenant_id = self.get_item_tenant_id(item)
