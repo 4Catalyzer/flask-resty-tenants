@@ -145,11 +145,13 @@ class TenantAuthorization(
                 raise ApiError(403, {'code': 'invalid_data.tenant'})
 
     def authorize_modify_item(self, item, action):
-        tenant_id = self.get_item_tenant_id(item)
         required_role = self.get_required_role(action)
-
-        if not self.is_authorized(tenant_id, required_role):
-            raise ApiError(403, {'code': 'invalid_tenant.role'})
+        self.authorize_item_tenant_role(item, required_role)
 
     def get_required_role(self, action):
         return getattr(self, '{}_role'.format(action))
+
+    def authorize_item_tenant_role(self, item, required_role):
+        tenant_id = self.get_item_tenant_id(item)
+        if not self.is_authorized(tenant_id, required_role):
+            raise ApiError(403, {'code': 'invalid_tenant.role'})
