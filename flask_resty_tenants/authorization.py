@@ -65,11 +65,14 @@ class TenantAuthorization(
         return data[self.tenant_id_field]
 
     def get_role_data(self):
+        return self.get_credentials_dict_value(self.role_field)
+
+    def get_credentials_dict_value(self, key):
         try:
-            role_data = self.get_request_credentials()[self.role_field]
+            value = self.get_request_credentials()[key]
         except (TypeError, KeyError):
-            role_data = None
-        return role_data if isinstance(role_data, dict) else {}
+            value = {}
+        return value if isinstance(value, dict) else {}
 
     def ensure_role(self, role):
         return role if isinstance(role, int) else PUBLIC
