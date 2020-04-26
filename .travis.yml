@@ -7,7 +7,7 @@ python:
 env:
   - TOXENV=py
 
-matrix:
+jobs:
   include:
     - env: TOXENV=lint
 
