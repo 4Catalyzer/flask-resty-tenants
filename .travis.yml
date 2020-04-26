@@ -3,10 +3,13 @@ python:
   - "3.8"
   - "3.7"
   - "3.6"
-  - "2.7"
 
 env:
   - TOXENV=py
+
+matrix:
+  include:
+    - env: TOXENV=lint
 
 cache: pip
 

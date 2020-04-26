@@ -1,9 +1,10 @@
 import uuid
 
-from flask_resty.authentication import set_request_credentials
-from flask_resty_tenants import TenantAuthorization
 import pytest
+from flask_resty.authentication import set_request_credentials
 from sqlalchemy import Column, Integer
+
+from flask_resty_tenants import TenantAuthorization
 
 # -----------------------------------------------------------------------------
 
@@ -28,11 +29,7 @@ def tenant_id():
 
 
 def test_credentials(auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            str(tenant_id): 1,
-        }
-    })
+    set_request_credentials({"app_metadata": {str(tenant_id): 1,}})
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert tuple(auth.get_authorized_tenant_ids(1)) == (tenant_id,)
@@ -43,11 +40,7 @@ def test_credentials(auth, tenant_id):
 
 
 def test_credentials_custom_field(auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            str(tenant_id): 1,
-        }
-    })
+    set_request_credentials({"app_metadata": {str(tenant_id): 1,}})
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert tuple(auth.get_authorized_tenant_ids(1)) == (tenant_id,)
@@ -58,13 +51,11 @@ def test_credentials_custom_field(auth, tenant_id):
 
 
 def test_credentials_custom_role_field(auth, tenant_id):
-    set_request_credentials({
-        'https://foo.com/app_metadata': {
-            str(tenant_id): 1,
-        }
-    })
+    set_request_credentials(
+        {"https://foo.com/app_metadata": {str(tenant_id): 1,}}
+    )
 
-    auth.role_field = 'https://foo.com/app_metadata'
+    auth.role_field = "https://foo.com/app_metadata"
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert tuple(auth.get_authorized_tenant_ids(1)) == (tenant_id,)
@@ -78,13 +69,9 @@ def test_global_credentials(auth, tenant_id):
     tenant_id_2 = uuid.uuid4()
     tenant_id_3 = uuid.uuid4()
 
-    set_request_credentials({
-        'app_metadata': {
-            str(tenant_id): 1,
-            str(tenant_id_3): -1,
-            '*': 0,
-        }
-    })
+    set_request_credentials(
+        {"app_metadata": {str(tenant_id): 1, str(tenant_id_3): -1, "*": 0,}}
+    )
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert auth.is_authorized(tenant_id, 1)
@@ -95,30 +82,23 @@ def test_global_credentials(auth, tenant_id):
 
 
 def test_bad_credentials(auth, tenant_id):
-    set_request_credentials('not a valid payload')
+    set_request_credentials("not a valid payload")
 
     assert not tuple(auth.get_authorized_tenant_ids(0))
     assert not auth.is_authorized(tenant_id, 0)
 
 
 def test_bad_role(auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            str(tenant_id): None,
-        }
-    })
+    set_request_credentials({"app_metadata": {str(tenant_id): None,}})
 
     assert not tuple(auth.get_authorized_tenant_ids(0))
     assert not auth.is_authorized(tenant_id, 0)
 
 
 def test_bad_global_role(auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            str(tenant_id): None,
-            '*': None,
-        }
-    })
+    set_request_credentials(
+        {"app_metadata": {str(tenant_id): None, "*": None,}}
+    )
 
     assert not tuple(auth.get_authorized_tenant_ids(0))
     assert not auth.is_authorized(tenant_id, 0)
@@ -126,12 +106,14 @@ def test_bad_global_role(auth, tenant_id):
 
 
 def test_bad_role_other_tenant(auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            uuid.uuid4(): 'not a valid role',
-            str(tenant_id): 2,
+    set_request_credentials(
+        {
+            "app_metadata": {
+                uuid.uuid4(): "not a valid role",
+                str(tenant_id): 2,
+            }
         }
-    })
+    )
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert tuple(auth.get_authorized_tenant_ids(2)) == (tenant_id,)
@@ -139,12 +121,9 @@ def test_bad_role_other_tenant(auth, tenant_id):
 
 
 def test_bad_tenant(auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            'not a valid tenant': 2,
-            str(tenant_id): 2,
-        }
-    })
+    set_request_credentials(
+        {"app_metadata": {"not a valid tenant": 2, str(tenant_id): 2,}}
+    )
 
     assert tuple(auth.get_authorized_tenant_ids(0)) == (tenant_id,)
     assert tuple(auth.get_authorized_tenant_ids(2)) == (tenant_id,)
@@ -152,14 +131,10 @@ def test_bad_tenant(auth, tenant_id):
 
 
 def test_filtering(db, auth, tenant_id):
-    set_request_credentials({
-        'app_metadata': {
-            '*': 0,
-        }
-    })
+    set_request_credentials({"app_metadata": {"*": 0,}})
 
     class Widget(db.Model):
-        __tablename__ = 'widgets'
+        __tablename__ = "widgets"
 
         id = Column(Integer, primary_key=True)
 

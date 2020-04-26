@@ -1,7 +1,6 @@
 from uuid import UUID
 
 import flask
-
 from flask_resty import (
     ApiError,
     AuthorizeModifyMixin,
@@ -11,27 +10,26 @@ from flask_resty.utils import settable_property
 
 # -----------------------------------------------------------------------------
 
-PUBLIC = float('-inf')
+PUBLIC = float("-inf")
 READ_ONLY = 0
 MEMBER = 1
 ADMIN = 2
-NOT_ALLOWED = float('inf')
+NOT_ALLOWED = float("inf")
 
 # -----------------------------------------------------------------------------
 
 
 class TenantAuthorization(
-    AuthorizeModifyMixin,
-    HasCredentialsAuthorizationBase,
+    AuthorizeModifyMixin, HasCredentialsAuthorizationBase,
 ):
     read_role = READ_ONLY
     modify_role = MEMBER
 
-    role_field = 'app_metadata'
+    role_field = "app_metadata"
 
-    global_tenant = '*'
+    global_tenant = "*"
     tenant_id_type = UUID
-    tenant_id_field = 'tenant_id'
+    tenant_id_field = "tenant_id"
 
     @settable_property
     def save_role(self):
@@ -111,7 +109,7 @@ class TenantAuthorization(
         return self.get_tenant_role(tenant_id) >= required_role
 
     def authorize_request(self):
-        super(TenantAuthorization, self).authorize_request()
+        super().authorize_request()
         self.check_request_tenant_id()
 
     def check_request_tenant_id(self):
@@ -136,7 +134,7 @@ class TenantAuthorization(
 
     def authorize_update_item(self, item, data):
         self.authorize_update_item_tenant_id(item, data)
-        super(TenantAuthorization, self).authorize_update_item(item, data)
+        super().authorize_update_item(item, data)
 
     def authorize_update_item_tenant_id(self, item, data):
         try:
@@ -145,16 +143,16 @@ class TenantAuthorization(
             pass
         else:
             if data_tenant_id != self.get_item_tenant_id(item):
-                raise ApiError(403, {'code': 'invalid_data.tenant'})
+                raise ApiError(403, {"code": "invalid_data.tenant"})
 
     def authorize_modify_item(self, item, action):
         required_role = self.get_required_role(action)
         self.authorize_item_tenant_role(item, required_role)
 
     def get_required_role(self, action):
-        return getattr(self, '{}_role'.format(action))
+        return getattr(self, f"{action}_role")
 
     def authorize_item_tenant_role(self, item, required_role):
         tenant_id = self.get_item_tenant_id(item)
         if not self.is_authorized(tenant_id, required_role):
-            raise ApiError(403, {'code': 'invalid_tenant.role'})
+            raise ApiError(403, {"code": "invalid_tenant.role"})
