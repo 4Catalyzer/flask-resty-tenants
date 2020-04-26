@@ -25,7 +25,7 @@ def system(command):
 
 setup(
     name="Flask-RESTy-Tenants",
-    version="0.7.3",
+    version="0.8.0",
     description="Multitenant authorization for Flask-RESTy",
     url="https://github.com/4Catalyzer/flask-resty-tenants",
     author="Giacomo Tagliabue",
